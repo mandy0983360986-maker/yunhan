@@ -1,0 +1,5 @@
+{
+  "name": "AlphaTrade Pro (智富操盤)",
+  "description": "專業級資產管理與模擬交易系統，具備雙模組(Mock/Real)切換功能，整合 Gemini AI 投資顧問。",
+  "requestFramePermissions": []
+}
