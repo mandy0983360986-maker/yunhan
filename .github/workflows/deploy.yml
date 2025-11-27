@@ -1,0 +1,54 @@
+on:
+  push:
+    branches: [ main ] # 監聽 main 分支的變動
+
+# 賦予 GITHUB_TOKEN 權限以部署 Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 這裡 (下載程式碼)
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (設定 Node 環境)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies (安裝套件)
+        run: npm install
+
+      - name: Build Project (打包專案)
+        # 關鍵：在這裡將 Secrets 注入到環境變數中
+        # Vite 在 build 過程中會將 VITE_ 開頭的變數寫入靜態檔案
+        env:
+          VITE_FINNHUB_API_KEY: ${{ secrets.VITE_FINNHUB_API_KEY }}
+          VITE_FIREBASE_CONFIG_STRING: ${{ secrets.VITE_FIREBASE_CONFIG_STRING }}
+          # 由於我們在程式碼用了 process.env.API_KEY，我們也透過 VITE 將其傳入
+          # 在 Vite 中通常需要 VITE_ 前綴，但我們可以透過 define 在 vite config 處理，
+          # 或是簡單地我們修改 envService.ts 讓它支援 VITE_GEMINI_API_KEY 會更順暢。
+          # 這裡我們先依原本邏輯，確保變數存在環境中。
+          API_KEY: ${{ secrets.API_KEY }}
+        run: npm run build
+
+      - name: Upload artifact (上傳打包好的檔案)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist' # Vite 預設打包輸出目錄
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages (發布)
+        id: deployment
+        uses: actions/deploy-pages@v4
